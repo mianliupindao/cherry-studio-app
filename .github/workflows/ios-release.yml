@@ -85,6 +85,8 @@ jobs:
       # Step 9: Build iOS IPA on EAS (without submit)
       - name: Build iOS IPA on EAS
         id: build_ios
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Building iOS IPA (version from package.json)..."
           eas build --platform ios --profile production --non-interactive --no-wait --json > ios_build.json
@@ -96,6 +98,8 @@ jobs:
       # Step 10: Wait for build to complete
       - name: Wait for iOS build to complete
         id: wait_build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           BUILD_ID="${{ steps.build_ios.outputs.build_id }}"
           echo "⏳ Waiting for build $BUILD_ID to complete..."
