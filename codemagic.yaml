@@ -24,10 +24,14 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          # 启用 Corepack（Node.js 包管理器）
-          corepack enable
+          # 启用 Corepack 并准备 Yarn 4
+          sudo corepack enable
+          corepack prepare yarn@4.10.3 --activate
 
-          # 安装项目依赖（Corepack 会自动使用 package.json 中指定的 yarn@4.10.3）
+          # 验证 Yarn 版本
+          yarn --version
+
+          # 安装项目依赖
           yarn install --immutable
 
       - name: Generate native iOS project
