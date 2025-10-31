@@ -6,8 +6,8 @@ workflows:
 
     environment:
       vars:
-        EXPO_TOKEN: Encrypted(...)  # 需要在Codemagic网页上配置
-        GITHUB_TOKEN: Encrypted(...)  # 需要在Codemagic网页上配置，用于发布到GitHub Releases
+        EXPO_TOKEN  # 需要在Codemagic网页上配置
+        GITHUB_TOKEN  # 需要在Codemagic网页上配置，用于发布到GitHub Releases
 
       node: 20.x
       xcode: 16.1
