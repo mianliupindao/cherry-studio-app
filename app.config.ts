@@ -40,7 +40,7 @@ export default {
       [
         'expo-build-properties',
         {
-          ios: { deploymentTarget: '15.5' },
+          ios: { deploymentTarget: '13.3' },
           android: {
             buildToolsVersion: '35.0.0',
             compileSdkVersion: 35,
