@@ -9,7 +9,7 @@ workflows:
         - expo_credentials
         - github_credentials
 
-      node: 20.x
+      node: 20
       xcode: 16.1
       cocoapods: default
 
