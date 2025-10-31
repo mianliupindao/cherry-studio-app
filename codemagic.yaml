@@ -5,9 +5,9 @@ workflows:
     instance_type: mac_mini_m1
 
     environment:
-      vars:
-        EXPO_TOKEN  # 需要在Codemagic网页上配置
-        GITHUB_TOKEN  # 需要在Codemagic网页上配置，用于发布到GitHub Releases
+      groups:
+        - expo_credentials
+        - github_credentials
 
       node: 20.x
       xcode: 16.1
