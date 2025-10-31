@@ -24,9 +24,11 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          # 启用 Corepack 并准备 Yarn 4
+          # 启用 Corepack
           sudo corepack enable
-          corepack prepare yarn@4.10.3 --activate
+
+          # 使用 npx 安装 Yarn 4.10.3
+          npm install -g yarn@4.10.3
 
           # 验证 Yarn 版本
           yarn --version
