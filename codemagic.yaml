@@ -24,11 +24,26 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
+          #!/bin/bash
+          set -e
+          set -x
+
           # 启用 Corepack
           sudo corepack enable
 
-          # 使用 npx 安装 Yarn 4.10.3
-          npm install -g yarn@4.10.3
+          # 准备 Yarn 4.10.3
+          corepack prepare yarn@4.10.3 --activate
+
+          # 创建一个 wrapper 脚本来使用 corepack yarn
+          cat > /tmp/yarn-wrapper.sh << 'EOF'
+          #!/bin/bash
+          exec corepack yarn "$@"
+          EOF
+          chmod +x /tmp/yarn-wrapper.sh
+
+          # 临时替换系统的 yarn 命令
+          sudo mv /usr/local/bin/yarn /usr/local/bin/yarn.old || true
+          sudo ln -sf /tmp/yarn-wrapper.sh /usr/local/bin/yarn
 
           # 验证 Yarn 版本
           yarn --version
