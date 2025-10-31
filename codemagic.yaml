@@ -1,0 +1,132 @@
+workflows:
+  ios-release:
+    name: iOS Release Build (iOS 13.3)
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    environment:
+      vars:
+        EXPO_TOKEN: Encrypted(...)  # 需要在Codemagic网页上配置
+
+      node: 20.x
+      xcode: 16.1
+      cocoapods: default
+
+    triggering:
+      events:
+        - tag
+      tag_patterns:
+        - pattern: 'v*.*.*'
+          include: true
+      cancel_previous_builds: true
+
+    scripts:
+      - name: Install dependencies
+        script: |
+          # 安装 Yarn 4
+          corepack enable
+          corepack prepare yarn@4.10.3 --activate
+
+          # 安装项目依赖
+          yarn install --immutable
+
+      - name: Generate native iOS project
+        script: |
+          # 使用 expo prebuild 生成原生项目
+          npx expo prebuild --platform ios --clean
+
+      - name: Set iOS deployment target to 13.3
+        script: |
+          # 修改 app.config.ts 中的 deploymentTarget
+          # 这个已经在之前改过了，这里再确认一次
+
+          # 修改生成的 Podfile
+          cd ios
+          if [ -f "Podfile" ]; then
+            sed -i '' "s/platform :ios, .*/platform :ios, '13.3'/" Podfile
+          fi
+
+          # 修改所有 .xcodeproj 中的 IPHONEOS_DEPLOYMENT_TARGET
+          find . -name "project.pbxproj" | while read proj; do
+            sed -i '' "s/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*;/IPHONEOS_DEPLOYMENT_TARGET = 13.3;/g" "$proj"
+          done
+
+          cd ..
+
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+          cd ..
+
+      - name: Build iOS app
+        script: |
+          cd ios
+
+          # 查找 workspace 和 scheme
+          WORKSPACE=$(find . -name "*.xcworkspace" | head -n 1)
+          SCHEME=$(xcodebuild -list -workspace "$WORKSPACE" 2>/dev/null | grep -A 1 "Schemes:" | tail -n 1 | xargs)
+
+          echo "Building with workspace: $WORKSPACE"
+          echo "Using scheme: $SCHEME"
+
+          # 构建并归档
+          xcodebuild -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$CM_BUILD_DIR/CherryStudio.xcarchive" \
+            archive \
+            IPHONEOS_DEPLOYMENT_TARGET=13.3 \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Export IPA (unsigned)
+        script: |
+          # 创建 ExportOptions.plist (development/ad-hoc)
+          cat > /tmp/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>development</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>uploadSymbols</key>
+            <false/>
+            <key>signingStyle</key>
+            <string>manual</string>
+          </dict>
+          </plist>
+          EOF
+
+          # 导出 IPA
+          xcodebuild -exportArchive \
+            -archivePath "$CM_BUILD_DIR/CherryStudio.xcarchive" \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -exportPath "$CM_BUILD_DIR/export" \
+            -allowProvisioningUpdates
+
+          # 重命名 IPA
+          find "$CM_BUILD_DIR/export" -name "*.ipa" -exec mv {} "$CM_BUILD_DIR/CherryStudio.ipa" \;
+
+          # 验证 IPA 是否生成
+          if [ -f "$CM_BUILD_DIR/CherryStudio.ipa" ]; then
+            echo "✅ IPA generated successfully"
+            ls -lh "$CM_BUILD_DIR/CherryStudio.ipa"
+          else
+            echo "❌ Failed to generate IPA"
+            exit 1
+          fi
+
+    artifacts:
+      - $CM_BUILD_DIR/CherryStudio.ipa
+
+    publishing:
+      github_releases:
+        prerelease: false
+        artifact_patterns:
+          - CherryStudio.ipa
+
