@@ -7,6 +7,7 @@ workflows:
     environment:
       vars:
         EXPO_TOKEN: Encrypted(...)  # 需要在Codemagic网页上配置
+        GITHUB_TOKEN: Encrypted(...)  # 需要在Codemagic网页上配置，用于发布到GitHub Releases
 
       node: 20.x
       xcode: 16.1
@@ -121,12 +122,35 @@ workflows:
             exit 1
           fi
 
+      - name: Publish to GitHub Releases
+        script: |
+          #!/usr/bin/env zsh
+
+          # 只在 tag 构建时发布
+          if [ -z ${CM_TAG} ]; then
+            echo "Not a tag build, will not publish GitHub release"
+            exit 0
+          fi
+
+          # 创建 changelog（可选）
+          echo "## Cherry Studio iOS ${CM_TAG}" > changelog.md
+          echo "" >> changelog.md
+          echo "### 下载" >> changelog.md
+          echo "- iOS 最低版本: 13.3" >> changelog.md
+          echo "- 适用于越狱设备" >> changelog.md
+          echo "" >> changelog.md
+          echo "### 安装方法" >> changelog.md
+          echo "1. 下载 CherryStudio.ipa" >> changelog.md
+          echo "2. 使用 Filza、AltStore 或 Sideloadly 安装" >> changelog.md
+
+          # 使用 GitHub CLI 创建 release
+          gh release create "${CM_TAG}" \
+            --title "Cherry Studio ${CM_TAG}" \
+            --notes-file changelog.md \
+            "$CM_BUILD_DIR/CherryStudio.ipa"
+
+          echo "✅ Published to GitHub Releases: ${CM_TAG}"
+
     artifacts:
       - $CM_BUILD_DIR/CherryStudio.ipa
-
-    publishing:
-      github_releases:
-        prerelease: false
-        artifact_patterns:
-          - CherryStudio.ipa
 
