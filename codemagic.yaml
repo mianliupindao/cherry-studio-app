@@ -34,22 +34,11 @@ workflows:
           # 准备 Yarn 4.10.3
           corepack prepare yarn@4.10.3 --activate
 
-          # 创建一个 wrapper 脚本来使用 corepack yarn
-          cat > /tmp/yarn-wrapper.sh << 'EOF'
-          #!/bin/bash
-          exec corepack yarn "$@"
-          EOF
-          chmod +x /tmp/yarn-wrapper.sh
+          # 验证 Yarn 版本（使用 corepack）
+          corepack yarn --version
 
-          # 临时替换系统的 yarn 命令
-          sudo mv /usr/local/bin/yarn /usr/local/bin/yarn.old || true
-          sudo ln -sf /tmp/yarn-wrapper.sh /usr/local/bin/yarn
-
-          # 验证 Yarn 版本
-          yarn --version
-
-          # 安装项目依赖
-          yarn install --immutable
+          # 安装项目依赖（直接使用 corepack yarn）
+          corepack yarn install --immutable
 
       - name: Generate native iOS project
         script: |
