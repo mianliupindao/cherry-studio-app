@@ -8,6 +8,7 @@ import type { Provider } from '@/types/assistant'
 import { db } from '@db'
 import { transformDbToProvider } from '@db/mappers'
 import { providers as providersSchema } from '@db/schema'
+import { CHERRYAI_PROVIDER } from '@/config/providers'
 
 const logger = loggerService.withContext('useProvider')
 
@@ -19,7 +20,7 @@ export function useAllProviders() {
   const { data: rawProviders, updatedAt } = useLiveQuery(query)
 
   const processedProviders = useMemo(() => {
-    if (!rawProviders || rawProviders.length === 0) return []
+    if (!rawProviders || rawProviders.length === 0) return [CHERRYAI_PROVIDER]
     const transformed = rawProviders.map(provider => transformDbToProvider(provider))
     // Sort by enabled: true first, then false
     return transformed.sort((a, b) => {
@@ -30,13 +31,13 @@ export function useAllProviders() {
 
   if (!updatedAt || !rawProviders || rawProviders.length === 0) {
     return {
-      providers: [],
+      providers: [CHERRYAI_PROVIDER],
       isLoading: true
     }
   }
 
   return {
-    providers: processedProviders,
+    providers: processedProviders.concat(CHERRYAI_PROVIDER),
     isLoading: false
   }
 }
@@ -154,6 +155,14 @@ export function useProvider(providerId: string) {
   )
 
   // ==================== Return API ====================
+
+  if (providerId === 'cherryai') {
+    return {
+      provider: CHERRYAI_PROVIDER,
+      isLoading: false,
+      updateProvider: () => {}
+    }
+  }
 
   return {
     provider,

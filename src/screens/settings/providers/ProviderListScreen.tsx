@@ -30,6 +30,8 @@ export default function ProviderListScreen() {
     { delay: 100 }
   )
 
+  const providersList = filteredProviders.filter(p => p.id !== 'cherryai')
+
   const onAddProvider = () => {
     setSheetMode('add')
     setEditingProvider(undefined)
@@ -65,12 +67,12 @@ export default function ProviderListScreen() {
 
           <Group className="flex-1">
             <LegendList
-              data={filteredProviders}
+              data={providersList}
               renderItem={renderProviderItem}
               keyExtractor={item => item.id}
               estimatedItemSize={60}
               showsVerticalScrollIndicator={false}
-              extraData={filteredProviders}
+              extraData={providersList}
               contentContainerStyle={{ paddingBottom: 30 }}
               drawDistance={2000}
               recycleItems
